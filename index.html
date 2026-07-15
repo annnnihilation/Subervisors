@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Доска достижений Beko</title>
     <style>
-        /* ===== Стили (те же, что были) ===== */
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
         body {
             background: linear-gradient(135deg, #0b2a4a 0%, #1b4a7a 100%);
             min-height: 100vh;
@@ -76,7 +80,7 @@
             width: 100%;
             border-collapse: collapse;
             background: white;
-            min-width: 600px;
+            min-width: 500px;
         }
         th {
             background: #0b2a4a;
@@ -107,7 +111,8 @@
         .rank.silver { color: #a0aec0; }
         .rank.bronze { color: #cd7f32; }
         .avatar {
-            width: 38px; height: 38px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             background: #d4e2f0;
             display: flex;
@@ -250,18 +255,18 @@
             font-size: 0.95rem;
         }
         .modal .btn { width: 100%; padding: 12px; margin-top: 16px; }
-        @keyframes pop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); color: #f5b342; }
-            100% { transform: scale(1); }
-        }
-        .pop-score { animation: pop 0.3s ease; }
         .loading {
             text-align: center;
             padding: 40px;
             font-size: 1.2rem;
             color: #0b2a4a;
         }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); color: #f5b342; }
+            100% { transform: scale(1); }
+        }
+        .pop-score { animation: pop 0.3s ease; }
         @media (max-width: 700px) {
             .container { padding: 16px 12px; }
             h1 { font-size: 1.4rem; }
@@ -278,14 +283,13 @@
 <div class="container" id="app">
     <h1>
         🏆 Доска достижений Beko
-        <small>Супервайзеры · Крупная техника</small>
+        <small>Лучшая команда проекта</small>
     </h1>
 
     <div class="stats-row">
         <div class="stat-card">👥 Всего <span id="totalCount">0</span></div>
         <div class="stat-card">⭐ Бекойнов <span id="totalCoins">0</span></div>
         <div class="stat-card">🏅 Ачивок <span id="totalBadges">0</span></div>
-        <div class="stat-card">⚔️ Поединков <span id="totalDuels">0</span></div>
     </div>
 
     <div id="loadingIndicator" class="loading">⏳ Загрузка данных...</div>
@@ -298,7 +302,7 @@
                     <th>Супервайзер</th>
                     <th style="min-width:120px;">Достижения</th>
                     <th style="width:100px; text-align:center;">Бекойны</th>
-                    <th style="width:140px; text-align:center;">Действия</th>
+                    <th style="width:100px; text-align:center;">Действия</th>
                 </tr>
             </thead>
             <tbody id="leaderboardBody"></tbody>
@@ -306,23 +310,11 @@
     </div>
 
     <div class="footer-actions" id="actionButtons" style="display:none;">
-        <button class="btn btn-primary" onclick="openDuelModal()">⚔️ Поединки</button>
         <button class="btn btn-success" onclick="weeklyAward()">📆 Недельное начисление</button>
         <button class="btn btn-warning" onclick="exportCSV()">⬇️ Экспорт CSV</button>
         <button class="btn btn-primary" onclick="document.getElementById('importFile').click()">⬆️ Импорт CSV</button>
         <input type="file" id="importFile" accept=".csv" style="display:none" onchange="importCSV(event)">
-        <button class="btn btn-danger" onclick="resetAll()">🔄 Сброс (очистить баллы)</button>
-    </div>
-</div>
-
-<!-- Модальное окно: Поединки -->
-<div class="modal-overlay" id="duelModal">
-    <div class="modal">
-        <h2>
-            ⚔️ Управление поединками
-            <button class="close" onclick="closeModal('duelModal')">&times;</button>
-        </h2>
-        <div id="duelContent"></div>
+        <button class="btn btn-danger" onclick="resetAll()">🔄 Сброс баллов</button>
     </div>
 </div>
 
@@ -341,13 +333,12 @@
     // ================================================================
     // 1. КОНФИГУРАЦИЯ
     // ================================================================
-    const API_URL = https://script.google.com/macros/s/AKfycbyqVIgPhYujjq5ewzZt3AIga6RhawHWbtUzkbEJuBoCcLisimbDrJx_Q4aWheTTEePljA/exec
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyqVIgPhYujjq5ewzZt3AIga6RhawHWbtUzkbEJuBoCcLisimbDrJx_Q4aWheTTEePljA/exec';  // ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL!
 
     // ================================================================
     // 2. ГЛОБАЛЬНОЕ СОСТОЯНИЕ
     // ================================================================
-    let supervisors = [];          // текущий массив супервайзеров (из таблицы)
-    let duels = [];               // локально (в localStorage)
+    let supervisors = [];
     let weeklyHistory = [];
 
     // ================================================================
@@ -360,19 +351,20 @@
             document.getElementById('actionButtons').style.display = 'none';
 
             const response = await fetch(API_URL);
-            if (!response.ok) throw new Error('Ошибка загрузки');
+            if (!response.ok) {
+                throw new Error(`Ошибка HTTP: ${response.status}`);
+            }
             const data = await response.json();
             supervisors = data;
-            // Загружаем локальные данные (поединки, историю)
             loadLocalData();
             render();
             document.getElementById('loadingIndicator').style.display = 'none';
             document.getElementById('tableWrap').style.display = 'block';
             document.getElementById('actionButtons').style.display = 'flex';
         } catch (e) {
-            alert('Не удалось загрузить данные из Google Таблицы. Проверьте интернет и URL.');
-            console.error(e);
-            document.getElementById('loadingIndicator').textContent = '❌ Ошибка загрузки. Перезагрузите страницу.';
+            console.error('Ошибка загрузки:', e);
+            document.getElementById('loadingIndicator').textContent =
+                '❌ Не удалось загрузить данные. Проверьте интернет и URL. Ошибка: ' + e.message;
         }
     }
 
@@ -383,39 +375,40 @@
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
-                mode: 'no-cors', // важно для GAS – ответ может быть пустым
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ supervisors })
             });
-            // При no-cors мы не можем прочитать ответ, но запрос уходит.
-            // Для отладки можно использовать режим 'cors', но тогда нужны заголовки в скрипте.
-            // Сообщим пользователю об успехе условно.
-            console.log('Данные отправлены в таблицу');
+            if (!response.ok) {
+                throw new Error(`Ошибка сохранения: ${response.status}`);
+            }
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.error || 'Неизвестная ошибка');
+            }
+            console.log('Данные сохранены в таблицу');
         } catch (e) {
             console.error('Ошибка сохранения:', e);
-            alert('Не удалось сохранить данные в таблицу. Проверьте подключение.');
+            alert('Не удалось сохранить данные в таблицу: ' + e.message);
         }
     }
 
     // ================================================================
-    // 5. ЛОКАЛЬНЫЕ ДАННЫЕ (поединки, история)
+    // 5. ЛОКАЛЬНЫЕ ДАННЫЕ (история начислений)
     // ================================================================
     function loadLocalData() {
         const saved = localStorage.getItem('bekoLocal');
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
-                duels = parsed.duels || [];
                 weeklyHistory = parsed.weeklyHistory || [];
             } catch(e) {}
         } else {
-            duels = [];
             weeklyHistory = [];
         }
     }
 
     function saveLocalData() {
-        localStorage.setItem('bekoLocal', JSON.stringify({ duels, weeklyHistory }));
+        localStorage.setItem('bekoLocal', JSON.stringify({ weeklyHistory }));
     }
 
     // ================================================================
@@ -471,20 +464,17 @@
                 <td>
                     <div class="action-group">
                         <button class="btn btn-primary" onclick="addCoins(${sup.id}, 10)">+10</button>
-                        <button class="btn btn-warning" onclick="challenge(${sup.id})">⚔️</button>
                     </div>
                 </td>
             `;
             tbody.appendChild(tr);
         });
 
-        // Статистика
         document.getElementById('totalCount').textContent = supervisors.length;
         const totalCoins = supervisors.reduce((sum, s) => sum + s.coins, 0);
         document.getElementById('totalCoins').textContent = totalCoins;
         const totalBadges = supervisors.reduce((sum, s) => sum + s.badges.length, 0);
         document.getElementById('totalBadges').textContent = totalBadges;
-        document.getElementById('totalDuels').textContent = duels.length;
     }
 
     // ================================================================
@@ -496,151 +486,17 @@
         sup.coins += amount;
         updateBadges(sup);
         render();
-        // анимация
         const el = document.getElementById(`score-${id}`);
         if (el) {
             el.classList.remove('pop-score');
             void el.offsetWidth;
             el.classList.add('pop-score');
         }
-        // Сохраняем в API
         await saveToAPI();
     }
 
     // ================================================================
-    // 9. ПОЕДИНКИ (локально)
-    // ================================================================
-    function challenge(challengerId) {
-        const opponents = supervisors.filter(s => s.id !== challengerId);
-        if (opponents.length === 0) {
-            alert('Нет доступных оппонентов');
-            return;
-        }
-        const modal = document.getElementById('duelModal');
-        const content = document.getElementById('duelContent');
-        let html = `<p>Вызов от <strong>${supervisors.find(s => s.id === challengerId).name}</strong></p>
-                    <label>Выберите соперника:</label><select id="duelOpponent">`;
-        opponents.forEach(o => {
-            html += `<option value="${o.id}">${o.name}</option>`;
-        });
-        html += `</select>
-                 <button class="btn btn-primary" onclick="createDuel(${challengerId})">Бросить вызов</button>
-                 <button class="btn btn-danger" onclick="closeModal('duelModal')">Отмена</button>`;
-        content.innerHTML = html;
-        modal.classList.add('active');
-    }
-
-    function createDuel(challengerId) {
-        const opponentId = parseInt(document.getElementById('duelOpponent').value);
-        if (!opponentId) return;
-        const existing = duels.find(d =>
-            (d.challengerId === challengerId && d.opponentId === opponentId && d.status !== 'finished') ||
-            (d.challengerId === opponentId && d.opponentId === challengerId && d.status !== 'finished')
-        );
-        if (existing) {
-            alert('Поединок между этими супервайзерами уже активен!');
-            return;
-        }
-        const duel = {
-            id: Date.now(),
-            challengerId,
-            opponentId,
-            status: 'pending',
-            startDate: null,
-            endDate: null,
-            winnerId: null,
-            challengerCoinsAtStart: supervisors.find(s => s.id === challengerId)?.coins || 0,
-            opponentCoinsAtStart: supervisors.find(s => s.id === opponentId)?.coins || 0,
-        };
-        duels.push(duel);
-        saveLocalData();
-        closeModal('duelModal');
-        render();
-        openDuelModal();
-    }
-
-    function openDuelModal() {
-        const modal = document.getElementById('duelModal');
-        const content = document.getElementById('duelContent');
-        let html = '';
-        if (duels.length === 0) {
-            html = '<p>Нет активных поединков.</p>';
-        } else {
-            duels.forEach((d, idx) => {
-                const challenger = supervisors.find(s => s.id === d.challengerId);
-                const opponent = supervisors.find(s => s.id === d.opponentId);
-                const statusText = d.status === 'pending' ? '⏳ Ожидает' :
-                                   d.status === 'active' ? '⚔️ В процессе' : '✅ Завершён';
-                const winner = d.winnerId ? supervisors.find(s => s.id === d.winnerId) : null;
-                html += `<div style="border-bottom:1px solid #e9edf2; padding:12px 0;">
-                            <strong>${challenger?.name}</strong> vs <strong>${opponent?.name}</strong><br>
-                            Статус: ${statusText}
-                            ${winner ? ` | Победитель: ${winner.name}` : ''}
-                            <br>
-                            <button class="btn btn-success" onclick="acceptDuel(${d.id})" ${d.status !== 'pending' ? 'disabled' : ''}>Принять</button>
-                            <button class="btn btn-primary" onclick="startDuel(${d.id})" ${d.status !== 'pending' ? 'disabled' : ''}>Начать</button>
-                            <button class="btn btn-danger" onclick="finishDuel(${d.id})" ${d.status !== 'active' ? 'disabled' : ''}>Завершить</button>
-                            <button class="btn btn-warning" onclick="removeDuel(${d.id})">🗑️</button>
-                         </div>`;
-            });
-        }
-        html += `<button class="btn btn-primary" onclick="closeModal('duelModal'); challenge(${supervisors[0]?.id});" style="margin-top:12px;">➕ Новый вызов</button>`;
-        content.innerHTML = html;
-        modal.classList.add('active');
-    }
-
-    function acceptDuel(duelId) {
-        const duel = duels.find(d => d.id === duelId);
-        if (!duel || duel.status !== 'pending') return;
-        duel.status = 'active';
-        duel.startDate = new Date().toISOString();
-        duel.challengerCoinsAtStart = supervisors.find(s => s.id === duel.challengerId)?.coins || 0;
-        duel.opponentCoinsAtStart = supervisors.find(s => s.id === duel.opponentId)?.coins || 0;
-        saveLocalData();
-        openDuelModal();
-        render();
-    }
-
-    function startDuel(duelId) { acceptDuel(duelId); }
-
-    async function finishDuel(duelId) {
-        const duel = duels.find(d => d.id === duelId);
-        if (!duel || duel.status !== 'active') return;
-        const challenger = supervisors.find(s => s.id === duel.challengerId);
-        const opponent = supervisors.find(s => s.id === duel.opponentId);
-        if (!challenger || !opponent) return;
-        const challengerGain = challenger.coins - duel.challengerCoinsAtStart;
-        const opponentGain = opponent.coins - duel.opponentCoinsAtStart;
-        let winnerId = null;
-        if (challengerGain > opponentGain) winnerId = challenger.id;
-        else if (opponentGain > challengerGain) winnerId = opponent.id;
-        duel.status = 'finished';
-        duel.endDate = new Date().toISOString();
-        duel.winnerId = winnerId;
-        if (winnerId) {
-            const winner = supervisors.find(s => s.id === winnerId);
-            if (winner) {
-                winner.coins += 50;
-                updateBadges(winner);
-            }
-        }
-        saveLocalData();
-        // Сохраняем изменения баллов в таблицу
-        await saveToAPI();
-        openDuelModal();
-        render();
-    }
-
-    function removeDuel(duelId) {
-        if (!confirm('Удалить запись о поединке?')) return;
-        duels = duels.filter(d => d.id !== duelId);
-        saveLocalData();
-        openDuelModal();
-        render();
-    }
-
-    // ================================================================
-    // 10. НЕДЕЛЬНОЕ НАЧИСЛЕНИЕ
+    // 9. НЕДЕЛЬНОЕ НАЧИСЛЕНИЕ
     // ================================================================
     function weeklyAward() {
         const modal = document.getElementById('weeklyModal');
@@ -699,7 +555,7 @@
     }
 
     // ================================================================
-    // 11. ЭКСПОРТ / ИМПОРТ CSV (работает с текущими данными)
+    // 10. ЭКСПОРТ / ИМПОРТ CSV
     // ================================================================
     function exportCSV() {
         let csv = 'id,name,team,coins,badges\n';
@@ -749,7 +605,7 @@
     }
 
     // ================================================================
-    // 12. СБРОС (очистка баллов, но не удаление супервайзеров)
+    // 11. СБРОС БАЛЛОВ
     // ================================================================
     async function resetAll() {
         if (!confirm('Сбросить все баллы и достижения у всех супервайзеров?')) return;
@@ -757,14 +613,13 @@
             s.coins = 0;
             s.badges = [];
         });
-        // Поединки не сбрасываем (оставляем историю)
         render();
         await saveToAPI();
         alert('Баллы сброшены!');
     }
 
     // ================================================================
-    // 13. ВСПОМОГАТЕЛЬНЫЕ
+    // 12. ВСПОМОГАТЕЛЬНЫЕ
     // ================================================================
     function closeModal(id) {
         document.getElementById(id).classList.remove('active');
@@ -776,13 +631,9 @@
     });
 
     // ================================================================
-    // 14. ЗАПУСК
+    // 13. ЗАПУСК
     // ================================================================
     loadFromAPI();
-
-    // При каждой загрузке страницы – обновляем данные (можно по таймеру, но не будем)
-    // Периодическое обновление – по желанию
-    // setInterval(loadFromAPI, 60000); // каждую минуту
 </script>
 </body>
 </html>
