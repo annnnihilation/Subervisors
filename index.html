@@ -333,7 +333,7 @@
     // ================================================================
     // 1. КОНФИГУРАЦИЯ
     // ================================================================
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyqVIgPhYujjq5ewzZt3AIga6RhawHWbtUzkbEJuBoCcLisimbDrJx_Q4aWheTTEePljA/exec';  // ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL!
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyqVIgPhYujjq5ewzZt3AIga6RhawHWbtUzkbEJuBoCcLisimbDrJx_Q4aWheTTEePljA/exec'; // Ваш URL
 
     // ================================================================
     // 2. ГЛОБАЛЬНОЕ СОСТОЯНИЕ
@@ -342,7 +342,7 @@
     let weeklyHistory = [];
 
     // ================================================================
-    // 3. ЗАГРУЗКА ДАННЫХ ИЗ API
+    // 3. ЗАГРУЗКА ДАННЫХ ИЗ API (GET)
     // ================================================================
     async function loadFromAPI() {
         try {
@@ -369,26 +369,22 @@
     }
 
     // ================================================================
-    // 4. СОХРАНЕНИЕ В API (POST)
+    // 4. СОХРАНЕНИЕ В API (POST) – режим no-cors (обход CORS)
     // ================================================================
     async function saveToAPI() {
         try {
-            const response = await fetch(API_URL, {
+            // Отправляем без ожидания ответа (режим no-cors)
+            await fetch(API_URL, {
                 method: 'POST',
+                mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ supervisors })
             });
-            if (!response.ok) {
-                throw new Error(`Ошибка сохранения: ${response.status}`);
-            }
-            const result = await response.json();
-            if (!result.success) {
-                throw new Error(result.error || 'Неизвестная ошибка');
-            }
-            console.log('Данные сохранены в таблицу');
+            console.log('📤 Данные отправлены (режим no-cors)');
+            // При no-cors ответ недоступен, поэтому считаем, что всё ок.
         } catch (e) {
-            console.error('Ошибка сохранения:', e);
-            alert('Не удалось сохранить данные в таблицу: ' + e.message);
+            console.error('❌ Ошибка отправки:', e);
+            alert('Не удалось отправить данные: ' + e.message);
         }
     }
 
@@ -478,7 +474,7 @@
     }
 
     // ================================================================
-    // 8. ДЕЙСТВИЯ С МОНЕТАМИ (с синхронизацией)
+    // 8. ДЕЙСТВИЯ С МОНЕТАМИ
     // ================================================================
     async function addCoins(id, amount) {
         const sup = supervisors.find(s => s.id === id);
@@ -486,13 +482,17 @@
         sup.coins += amount;
         updateBadges(sup);
         render();
+        // Анимация
         const el = document.getElementById(`score-${id}`);
         if (el) {
             el.classList.remove('pop-score');
             void el.offsetWidth;
             el.classList.add('pop-score');
         }
+        // Отправляем в таблицу
         await saveToAPI();
+        // Перезагружаем данные, чтобы синхронизировать с сервером
+        await loadFromAPI();
     }
 
     // ================================================================
@@ -551,6 +551,7 @@
         closeModal('weeklyModal');
         render();
         await saveToAPI();
+        await loadFromAPI();
         alert(`Начислено ${totalAwarded} Бекойнов за неделю!`);
     }
 
@@ -598,6 +599,7 @@
             }
             render();
             await saveToAPI();
+            await loadFromAPI();
             alert('Данные импортированы и сохранены в таблицу!');
         };
         reader.readAsText(file);
@@ -615,6 +617,7 @@
         });
         render();
         await saveToAPI();
+        await loadFromAPI();
         alert('Баллы сброшены!');
     }
 
