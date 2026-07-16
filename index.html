@@ -187,6 +187,8 @@
         .btn-success { background: #2e9b6e; color: white; }
         .btn-danger { background: #c0392b; color: white; }
         .btn-warning { background: #f5b342; color: #0b2a4a; }
+        .btn-info { background: #3b82f6; color: white; }
+        .btn-info:hover { background: #2563eb; }
         .action-group {
             display: flex;
             flex-wrap: wrap;
@@ -217,7 +219,7 @@
         .modal {
             background: white;
             border-radius: 32px;
-            max-width: 600px;
+            max-width: 650px;
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
@@ -255,6 +257,31 @@
             font-size: 0.95rem;
         }
         .modal .btn { width: 100%; padding: 12px; margin-top: 16px; }
+        .modal .rules {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #0b2a4a;
+            background: #f0f6fd;
+            padding: 12px 16px;
+            border-radius: 16px;
+        }
+        .rules-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        .rules-table td, .rules-table th {
+            padding: 8px 10px;
+            border-bottom: 1px solid #d4e2f0;
+            text-align: left;
+        }
+        .rules-table th {
+            background: #eef4fa;
+            font-weight: 700;
+        }
+        .rules-table .badge-positive { color: #2e9b6e; font-weight: 700; }
+        .rules-table .badge-negative { color: #c0392b; font-weight: 700; }
         .loading {
             text-align: center;
             padding: 40px;
@@ -276,6 +303,8 @@
             .badge { font-size: 0.6rem; padding: 1px 6px; }
             .score-cell { font-size: 1.1rem; }
             .action-group .btn { font-size: 0.6rem; padding: 3px 8px; }
+            .modal { padding: 20px 16px; }
+            .modal input { width: 50px; }
         }
     </style>
 </head>
@@ -283,7 +312,7 @@
 <div class="container" id="app">
     <h1>
         🏆 Доска достижений Beko
-        <small>Лучшая команда проекта</small>
+        <small>Лучшая команда проекта Beko – Сибирь/Башкирия</small>
     </h1>
 
     <div class="stats-row">
@@ -311,6 +340,7 @@
 
     <div class="footer-actions" id="actionButtons" style="display:none;">
         <button class="btn btn-success" onclick="weeklyAward()">📆 Недельное начисление</button>
+        <button class="btn btn-info" onclick="openRules()">📋 Правила</button>
         <button class="btn btn-warning" onclick="exportCSV()">⬇️ Экспорт CSV</button>
         <button class="btn btn-primary" onclick="document.getElementById('importFile').click()">⬆️ Импорт CSV</button>
         <input type="file" id="importFile" accept=".csv" style="display:none" onchange="importCSV(event)">
@@ -329,11 +359,54 @@
     </div>
 </div>
 
+<!-- Модальное окно: Правила -->
+<div class="modal-overlay" id="rulesModal">
+    <div class="modal">
+        <h2>
+            📋 Правила начисления баллов
+            <button class="close" onclick="closeModal('rulesModal')">&times;</button>
+        </h2>
+        <div id="rulesContent">
+            <p style="margin-bottom:12px;"><strong>Баллы (БЕКОйны) начисляются и списываются по следующим правилам:</strong></p>
+
+            <h3 style="margin:16px 0 8px; font-size:1.1rem;">📊 Недельное начисление</h3>
+            <p style="margin-bottom:8px;">По 5 категориям:</p>
+            <ul style="margin-left:20px; margin-bottom:10px;">
+                <li>Рейтинг</li>
+                <li>Повышение места</li>
+                <li>Понижение места</li>
+                <li>Best practice</li>
+                <li>Фокусные позиции</li>
+            </ul>
+            <p style="margin-bottom:8px;"><strong>По каждой категории действует правило:</strong></p>
+            <table class="rules-table">
+                <tr><th>Место</th><th>Бонус</th></tr>
+                <tr><td>1-е</td><td class="badge-positive">+10 баллов</td></tr>
+                <tr><td>2-е</td><td class="badge-positive">+7 баллов</td></tr>
+                <tr><td>3-е</td><td class="badge-positive">+4 балла</td></tr>
+                <tr><td>4-е</td><td class="badge-positive">+1 балл</td></tr>
+            </table>
+            <p style="margin-top:10px;">Баллы за понижение места вычитаются по тому же принципу: количество потерянных мест = количество вычитаемых баллов.</p>
+
+            <h3 style="margin:16px 0 8px; font-size:1.1rem;">🏅 Достижения (ачивки)</h3>
+            <ul style="margin-left:20px; margin-bottom:8px;">
+                <li><strong>🏅 План</strong> – при достижении 100 баллов</li>
+                <li><strong>📚 Эксперт</strong> – при 200 баллах</li>
+                <li><strong>⚡ Красавчик</strong> – при 300 баллах</li>
+                <li><strong>🌟 Лидер</strong> – при 400 баллах</li>
+                <li><strong>💎 Мастер</strong> – при 500 баллах</li>
+            </ul>
+            <p style="font-style:italic; color:#6b7a8f; margin-top:12px;">Все изменения автоматически сохраняются в Google Таблицу и синхронизируются между пользователями.</p>
+        </div>
+    </div>
+</div>
+
 <script>
     // ================================================================
     // 1. КОНФИГУРАЦИЯ
     // ================================================================
     const API_URL = 'https://script.google.com/macros/s/AKfycbyqVIgPhYujjq5ewzZt3AIga6RhawHWbtUzkbEJuBoCcLisimbDrJx_Q4aWheTTEePljA/exec'; // Ваш URL
+    const PASSWORD = '40302010';
 
     // ================================================================
     // 2. ГЛОБАЛЬНОЕ СОСТОЯНИЕ
@@ -373,7 +446,6 @@
     // ================================================================
     async function saveToAPI() {
         try {
-            // Отправляем без ожидания ответа (режим no-cors)
             await fetch(API_URL, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -381,7 +453,6 @@
                 body: JSON.stringify({ supervisors })
             });
             console.log('📤 Данные отправлены (режим no-cors)');
-            // При no-cors ответ недоступен, поэтому считаем, что всё ок.
         } catch (e) {
             console.error('❌ Ошибка отправки:', e);
             alert('Не удалось отправить данные: ' + e.message);
@@ -414,7 +485,7 @@
         const newBadges = [];
         if (sup.coins >= 100) newBadges.push('🏅 План');
         if (sup.coins >= 200) newBadges.push('📚 Эксперт');
-        if (sup.coins >= 300) newBadges.push('⚡ Актив');
+        if (sup.coins >= 300) newBadges.push('⚡ Красавчик');
         if (sup.coins >= 400) newBadges.push('🌟 Лидер');
         if (sup.coins >= 500) newBadges.push('💎 Мастер');
         sup.badges = [...new Set(newBadges)];
@@ -482,30 +553,37 @@
         sup.coins += amount;
         updateBadges(sup);
         render();
-        // Анимация
         const el = document.getElementById(`score-${id}`);
         if (el) {
             el.classList.remove('pop-score');
             void el.offsetWidth;
             el.classList.add('pop-score');
         }
-        // Отправляем в таблицу
         await saveToAPI();
-        // Перезагружаем данные, чтобы синхронизировать с сервером
         await loadFromAPI();
     }
 
     // ================================================================
-    // 9. НЕДЕЛЬНОЕ НАЧИСЛЕНИЕ
+    // 9. НЕДЕЛЬНОЕ НАЧИСЛЕНИЕ (с защитой паролем)
     // ================================================================
     function weeklyAward() {
+        const input = prompt('Введите пароль для доступа к недельному начислению:');
+        if (input === null) return; // отмена
+        if (input === PASSWORD) {
+            showWeeklyAward();
+        } else {
+            alert('Неверный пароль!');
+        }
+    }
+
+    function showWeeklyAward() {
         const modal = document.getElementById('weeklyModal');
         const content = document.getElementById('weeklyContent');
         let html = `<p>Введите баллы для каждого супервайзера по метрикам (за прошедшую неделю):</p>
                     <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
                         <tr style="background:#eef4fa;">
                             <th>Супервайзер</th>
-                            <th>Рейтинг (0-10)</th>
+                            <th>Рейтинг</th>
                             <th>Повышение места</th>
                             <th>Понижение места</th>
                             <th>Best practice</th>
@@ -514,7 +592,7 @@
         supervisors.forEach(sup => {
             html += `<tr>
                         <td><strong>${sup.name}</strong></td>
-                        <td><input type="number" min="0" max="10" value="0" id="w_rating_${sup.id}" style="width:60px;"></td>
+                        <td><input type="number" min="0" value="0" id="w_rating_${sup.id}" style="width:60px;"></td>
                         <td><input type="number" min="0" value="0" id="w_up_${sup.id}" style="width:60px;"></td>
                         <td><input type="number" min="0" value="0" id="w_down_${sup.id}" style="width:60px;"></td>
                         <td><input type="number" min="0" value="0" id="w_best_${sup.id}" style="width:60px;"></td>
@@ -522,6 +600,10 @@
                     </tr>`;
         });
         html += `</table>
+                 <div class="rules">
+                    <strong>Важно:</strong> Рейтинг, Повышение места, Best practice, Фокусные позиции → прибавляются<br>
+                    Понижение места → вычитается
+                 </div>
                  <button class="btn btn-success" onclick="applyWeeklyAward()">Применить начисление</button>
                  <button class="btn btn-danger" onclick="closeModal('weeklyModal')">Отмена</button>`;
         content.innerHTML = html;
@@ -529,34 +611,41 @@
     }
 
     async function applyWeeklyAward() {
-        let totalAwarded = 0;
         supervisors.forEach(sup => {
             const rating = parseInt(document.getElementById(`w_rating_${sup.id}`).value) || 0;
             const up = parseInt(document.getElementById(`w_up_${sup.id}`).value) || 0;
             const down = parseInt(document.getElementById(`w_down_${sup.id}`).value) || 0;
             const best = parseInt(document.getElementById(`w_best_${sup.id}`).value) || 0;
             const focus = parseInt(document.getElementById(`w_focus_${sup.id}`).value) || 0;
-            const points = rating * 2 + up * 5 - down * 5 + best * 8 + focus * 6;
+            const points = rating + up - down + best + focus;
             if (points !== 0) {
                 sup.coins += points;
                 updateBadges(sup);
-                totalAwarded += points;
             }
         });
+
         weeklyHistory.push({
             date: new Date().toISOString(),
-            awarded: totalAwarded
+            awarded: supervisors.reduce((sum, s) => sum + s.coins, 0)
         });
         saveLocalData();
+
         closeModal('weeklyModal');
         render();
         await saveToAPI();
         await loadFromAPI();
-        alert(`Начислено ${totalAwarded} Бекойнов за неделю!`);
+        alert('Недельное начисление применено!');
     }
 
     // ================================================================
-    // 10. ЭКСПОРТ / ИМПОРТ CSV
+    // 10. ОТКРЫТИЕ МОДАЛКИ ПРАВИЛ
+    // ================================================================
+    function openRules() {
+        document.getElementById('rulesModal').classList.add('active');
+    }
+
+    // ================================================================
+    // 11. ЭКСПОРТ / ИМПОРТ CSV
     // ================================================================
     function exportCSV() {
         let csv = 'id,name,team,coins,badges\n';
@@ -607,7 +696,7 @@
     }
 
     // ================================================================
-    // 11. СБРОС БАЛЛОВ
+    // 12. СБРОС БАЛЛОВ
     // ================================================================
     async function resetAll() {
         if (!confirm('Сбросить все баллы и достижения у всех супервайзеров?')) return;
@@ -622,7 +711,7 @@
     }
 
     // ================================================================
-    // 12. ВСПОМОГАТЕЛЬНЫЕ
+    // 13. ВСПОМОГАТЕЛЬНЫЕ
     // ================================================================
     function closeModal(id) {
         document.getElementById(id).classList.remove('active');
@@ -634,7 +723,7 @@
     });
 
     // ================================================================
-    // 13. ЗАПУСК
+    // 14. ЗАПУСК
     // ================================================================
     loadFromAPI();
 </script>
